@@ -1,7 +1,7 @@
 /*!
 This module is concerned with how `cargo-script` extracts the manfiest from a script file.
 */
-extern crate hoedown;
+extern crate pulldown_cmark;
 extern crate regex;
 
 use self::regex::Regex;
@@ -626,45 +626,51 @@ fn find_code_block_manifest(s: &str) -> Option<(Manifest, &str)> {
 Extracts the first `Cargo` fenced code block from a chunk of Markdown.
 */
 fn scrape_markdown_manifest(content: &str) -> Result<Option<String>> {
-    use self::hoedown::{Buffer, Markdown, Render};
+    use std::ascii::AsciiExt;
 
-    // To match librustdoc/html/markdown.rs, HOEDOWN_EXTENSIONS.
-    let exts
-        = hoedown::NO_INTRA_EMPHASIS
-        | hoedown::TABLES
-        | hoedown::FENCED_CODE
-        | hoedown::AUTOLINK
-        | hoedown::STRIKETHROUGH
-        | hoedown::SUPERSCRIPT
-        | hoedown::FOOTNOTES;
+    use self::pulldown_cmark::Parser;
+    use self::pulldown_cmark::Event::*;
+    use self::pulldown_cmark::Tag::*;
 
-    let md = Markdown::new(&content).extensions(exts);
+    let mut parser = Parser::new(content);
+    let mut manifest = None;
 
-    struct ManifestScraper {
-        seen_manifest: bool,
-    }
-
-    impl Render for ManifestScraper {
-        fn code_block(&mut self, output: &mut Buffer, text: &Buffer, lang: &Buffer) {
-            use std::ascii::AsciiExt;
-
-            let lang = lang.to_str().unwrap();
-
-            if !self.seen_manifest && lang.eq_ignore_ascii_case("cargo") {
-                // Pass it through.
-                info!("found code block manifest");
-                output.pipe(text);
-                self.seen_manifest = true;
-            }
+    fn event_to_str<'a>(e: &'a self::pulldown_cmark::Event<'a>) -> String {
+        use self::pulldown_cmark::Event::*;
+        match *e {
+            Start(ref tag) => format!("Start({:?})", tag),
+            End(ref tag) => format!("End({:?})", tag),
+            Text(ref s) => format!("Text({:?})", s),
+            Html(ref s) => format!("Html({:?})", s),
+            InlineHtml(ref s) => format!("InlineHtml({:?})", s),
+            SoftBreak => format!("SoftBreak"),
+            HardBreak => format!("HardBreak"),
         }
     }
 
-    let mut ms = ManifestScraper { seen_manifest: false };
-    let mani_buf = ms.render(&md);
+    'outer_loop:
+    while let Some(event) = parser.next() {
+        match event {
+            Start(CodeBlock(ref lang)) if lang.eq_ignore_ascii_case("cargo") => {
+                let mut text = String::new();
 
-    if !ms.seen_manifest { return Ok(None) }
-    mani_buf.to_str().map(|s| Some(s.into()))
-        .map_err(|_| "error decoding manifest as UTF-8".into())
+                'inner_loop:
+                while let Some(event) = parser.next() {
+                    match event {
+                        End(..) => break 'inner_loop,
+                        Text(ref s) => text.push_str(s),
+                        other => panic!("unexpected event: {:?}", event_to_str(&other))
+                    }
+                }
+
+                manifest = Some(text);
+                break 'outer_loop;
+            },
+            _ => ()
+        }
+    }
+
+    Ok(manifest)
 }
 
 #[test]
