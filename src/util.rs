@@ -4,6 +4,17 @@ This module just contains other random implementation stuff.
 use std::error::Error;
 use std::marker::PhantomData;
 
+macro_rules! as_expr {
+    ($e:expr) => ($e);
+}
+
+#[macro_export]
+macro_rules! matches {
+    ($e:expr, $($tts:tt)*) => {
+        as_expr!(match $e { $($tts)* => true, _ => false })
+    };
+}
+
 /**
 Used to defer a closure until the value is dropped.
 

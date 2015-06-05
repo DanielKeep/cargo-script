@@ -26,11 +26,12 @@ If this is set to `true`, the digests used for package IDs will be replaced with
 */
 const STUB_HASHES: bool = false;
 
+#[macro_use] mod util;
+
 mod consts;
 mod error;
 mod manifest;
 mod platform;
-mod util;
 
 use std::error::Error;
 use std::ffi::OsString;

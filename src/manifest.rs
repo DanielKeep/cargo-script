@@ -629,35 +629,22 @@ fn scrape_markdown_manifest(content: &str) -> Result<Option<String>> {
     use std::ascii::AsciiExt;
 
     use self::pulldown_cmark::Parser;
-    use self::pulldown_cmark::Event::*;
-    use self::pulldown_cmark::Tag::*;
+    use self::pulldown_cmark::Event::{self, Start, Text};
+    use self::pulldown_cmark::Tag;
 
     let mut parser = Parser::new(content);
-    let mut manifest = None;
 
-    'outer_loop:
-    while let Some(event) = parser.next() {
-        match event {
-            Start(CodeBlock(ref lang)) if lang.eq_ignore_ascii_case("cargo") => {
-                let mut text = String::new();
+    let not_cb_start = |e: &Event| !matches!(e,
+        &Start(Tag::CodeBlock(ref lang)) if lang.eq_ignore_ascii_case("cargo"));
 
-                'inner_loop:
-                while let Some(event) = parser.next() {
-                    match event {
-                        End(..) => break 'inner_loop,
-                        Text(ref s) => text.push_str(s),
-                        other => panic!("unexpected event: {:?}", other)
-                    }
-                }
-
-                manifest = Some(text);
-                break 'outer_loop;
-            },
-            _ => ()
-        }
+    if let Some(_) = parser.by_ref().skip_while(not_cb_start).next() {
+        Ok(Some(parser
+            .take_while(|e| matches!(e, &Text(..)))
+            .map(|e| if let Text(s) = e { s } else { unreachable!() })
+            .fold(String::new(), |a, s| { a + &*s })))
+    } else {
+        Ok(None)
     }
-
-    Ok(manifest)
 }
 
 #[test]
