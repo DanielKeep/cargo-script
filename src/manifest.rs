@@ -635,19 +635,6 @@ fn scrape_markdown_manifest(content: &str) -> Result<Option<String>> {
     let mut parser = Parser::new(content);
     let mut manifest = None;
 
-    fn event_to_str<'a>(e: &'a self::pulldown_cmark::Event<'a>) -> String {
-        use self::pulldown_cmark::Event::*;
-        match *e {
-            Start(ref tag) => format!("Start({:?})", tag),
-            End(ref tag) => format!("End({:?})", tag),
-            Text(ref s) => format!("Text({:?})", s),
-            Html(ref s) => format!("Html({:?})", s),
-            InlineHtml(ref s) => format!("InlineHtml({:?})", s),
-            SoftBreak => format!("SoftBreak"),
-            HardBreak => format!("HardBreak"),
-        }
-    }
-
     'outer_loop:
     while let Some(event) = parser.next() {
         match event {
@@ -659,7 +646,7 @@ fn scrape_markdown_manifest(content: &str) -> Result<Option<String>> {
                     match event {
                         End(..) => break 'inner_loop,
                         Text(ref s) => text.push_str(s),
-                        other => panic!("unexpected event: {:?}", event_to_str(&other))
+                        other => panic!("unexpected event: {:?}", other)
                     }
                 }
 
