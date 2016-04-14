@@ -1,15 +1,13 @@
-/*
-Copyright ⓒ 2015 cargo-script contributors.
-
-Licensed under the MIT license (see LICENSE or <http://opensource.org
-/licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
-<http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
-files in the project carrying such notice may not be copied, modified,
-or distributed except according to those terms.
-*/
-/*!
-This module just contains any big string literals I don't want cluttering up the rest of the code.
-*/
+// Copyright ⓒ 2015 cargo-script contributors.
+//
+// Licensed under the MIT license (see LICENSE or <http://opensource.org
+// /licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
+// <http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
+// files in the project carrying such notice may not be copied, modified,
+// or distributed except according to those terms.
+//
+//! This module just contains any big string literals I don't want cluttering up the rest of the code.
+//!
 
 /**
 The message output when the user invokes `cargo script` with no further arguments.  We need to do this ourselves because `clap` doesn't provide any way to generate this message manually.
@@ -23,9 +21,8 @@ USAGE:
 
 For more information try --help";
 
-/*
-What follows are the templates used to wrap script input.  The input provided by the user is inserted in place of `%b`.  *Proper* templates of some kind would be nice, but damnit, I'm lazy.
-*/
+// What follows are the templates used to wrap script input.  The input provided by the user is inserted in place of `%b`.  *Proper* templates of some kind would be nice, but damnit, I'm lazy.
+//
 
 /// The template used for script file inputs.
 pub const FILE_TEMPLATE: &'static str = r#"%b"#;
@@ -41,12 +38,11 @@ fn main() {
 }
 "#;
 
-/*
-Regarding the loop templates: what I *want* is for the result of the closure to be printed to standard output *only* if it's not `()`.
-
-* TODO: Just use TypeId, dumbass.
-* TODO: Merge the `LOOP_*` templates so there isn't duplicated code.  It's icky.
-*/
+// Regarding the loop templates: what I *want* is for the result of the closure to be printed to standard output *only* if it's not `()`.
+//
+// TODO: Just use TypeId, dumbass.
+// TODO: Merge the `LOOP_*` templates so there isn't duplicated code.  It's icky.
+//
 
 /// The template used for `--loop` input, assuming no `--count` flag is also given.
 pub const LOOP_TEMPLATE: &'static str = r#"
@@ -158,4 +154,4 @@ Measured in milliseconds.
 */
 // It's been *one week* since you looked at me,
 // cocked your head to the side and said "I'm angry."
-pub const MAX_CACHE_AGE_MS: u64 = 1*7*24*60*60*1000;
+pub const MAX_CACHE_AGE_MS: u64 = 1 * 7 * 24 * 60 * 60 * 1000;

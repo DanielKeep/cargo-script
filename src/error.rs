@@ -1,15 +1,13 @@
-/*
-Copyright ⓒ 2015 cargo-script contributors.
-
-Licensed under the MIT license (see LICENSE or <http://opensource.org
-/licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
-<http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
-files in the project carrying such notice may not be copied, modified,
-or distributed except according to those terms.
-*/
-/*!
-This module contains the definition of the program's main error type.
-*/
+// Copyright ⓒ 2015 cargo-script contributors.
+//
+// Licensed under the MIT license (see LICENSE or <http://opensource.org
+// /licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
+// <http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
+// files in the project carrying such notice may not be copied, modified,
+// or distributed except according to those terms.
+//
+//! This module contains the definition of the program's main error type.
+//!
 
 use std::error::Error;
 use std::fmt;
@@ -37,15 +35,18 @@ Records who we have chosen to blame for a particular error.
 This is used to distinguish between "report this to a user" and "explode violently".
 */
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Blame { Human, Internal }
+pub enum Blame {
+    Human,
+    Internal,
+}
 
 impl MainError {
     pub fn is_human(&self) -> bool {
         use self::MainError::*;
         match *self {
-            Io(blame, _)
-            | OtherOwned(blame, _)
-            | OtherBorrowed(blame, _) => blame == Blame::Human,
+            Io(blame, _) |
+            OtherOwned(blame, _) |
+            OtherBorrowed(blame, _) => blame == Blame::Human,
         }
     }
 }

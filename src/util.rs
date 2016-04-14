@@ -1,15 +1,13 @@
-/*
-Copyright ⓒ 2015 cargo-script contributors.
-
-Licensed under the MIT license (see LICENSE or <http://opensource.org
-/licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
-<http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
-files in the project carrying such notice may not be copied, modified,
-or distributed except according to those terms.
-*/
-/*!
-This module just contains other random implementation stuff.
-*/
+// Copyright ⓒ 2015 cargo-script contributors.
+//
+// Licensed under the MIT license (see LICENSE or <http://opensource.org
+// /licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
+// <http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
+// files in the project carrying such notice may not be copied, modified,
+// or distributed except according to those terms.
+//
+//! This module just contains other random implementation stuff.
+//!
 use std::error::Error;
 use std::marker::PhantomData;
 
@@ -22,12 +20,12 @@ A `Defer` can also be "disarmed", preventing the closure from running at all.
 */
 #[must_use]
 pub struct Defer<'a, F, E>(Option<F>, PhantomData<&'a F>)
-where F: 'a + FnOnce() -> Result<(), E>,
-    E: Error;
+    where F: 'a + FnOnce() -> Result<(), E>,
+          E: Error;
 
 impl<'a, F, E> Defer<'a, F, E>
-where F: 'a + FnOnce() -> Result<(), E>,
-    E: Error
+    where F: 'a + FnOnce() -> Result<(), E>,
+          E: Error
 {
     /**
     Create a new `Defer` with the given closure.
@@ -46,9 +44,8 @@ where F: 'a + FnOnce() -> Result<(), E>,
 }
 
 impl<'a, F, E> ::std::ops::Drop for Defer<'a, F, E>
-where
-    F: 'a + FnOnce() -> Result<(), E>,
-    E: Error
+    where F: 'a + FnOnce() -> Result<(), E>,
+          E: Error
 {
     fn drop(&mut self) {
         if let Some(f) = self.0.take() {

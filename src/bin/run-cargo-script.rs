@@ -1,26 +1,24 @@
-/*
-Copyright ⓒ 2015 cargo-script contributors.
-
-Licensed under the MIT license (see LICENSE or <http://opensource.org
-/licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
-<http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
-files in the project carrying such notice may not be copied, modified,
-or distributed except according to those terms.
-*/
-/*!
-`run-cargo-script` is a trampoline program designed to be used as the target of hashbangs and/or file associations to allow Rust source files to be executed as scripts.
-
-The invocation is simple: it expects *at least* one argument, which is passed to `cargo-script` as the name of a script file to execute.  All other arguments are passed *after* a `--` argument to ensure they are interpreted as arguments to the *script* as opposed to this program, `cargo` or `cargo-script`.
-
-# Why a separate program?
-
-Because `cargo-script` isn't suitable for use as a hashbang target.  There are *two* problems:
-
-1. Because you *should* be using `/usr/bin/env` to locate the interpreter, you can't pass arguments.
-2. Without arguments, you can't distinguish between `cargo-script script` as the user trying to invoke a script file literally named `script` and a user executing `cargo script` with no further arguments.
-
-In addition, making it a program instead of a shell script means it doesn't have to worry about things like what shell the user has, or what happens on Windows.
-*/
+// Copyright ⓒ 2015 cargo-script contributors.
+//
+// Licensed under the MIT license (see LICENSE or <http://opensource.org
+// /licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
+// <http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
+// files in the project carrying such notice may not be copied, modified,
+// or distributed except according to those terms.
+//
+//! `run-cargo-script` is a trampoline program designed to be used as the target of hashbangs and/or file associations to allow Rust source files to be executed as scripts.
+//!
+//! The invocation is simple: it expects *at least* one argument, which is passed to `cargo-script` as the name of a script file to execute.  All other arguments are passed *after* a `--` argument to ensure they are interpreted as arguments to the *script* as opposed to this program, `cargo` or `cargo-script`.
+//!
+//! # Why a separate program?
+//!
+//! Because `cargo-script` isn't suitable for use as a hashbang target.  There are *two* problems:
+//!
+//! 1. Because you *should* be using `/usr/bin/env` to locate the interpreter, you can't pass arguments.
+//! 2. Without arguments, you can't distinguish between `cargo-script script` as the user trying to invoke a script file literally named `script` and a user executing `cargo script` with no further arguments.
+//!
+//! In addition, making it a program instead of a shell script means it doesn't have to worry about things like what shell the user has, or what happens on Windows.
+//!
 use std::process::Command;
 
 fn main() {
@@ -39,8 +37,8 @@ fn main() {
     let mut cmd = Command::new("cargo");
 
     cmd.arg("script")
-        .arg(path)
-        .arg("--");
+       .arg(path)
+       .arg("--");
 
     for arg in args {
         cmd.arg(arg);
@@ -51,7 +49,7 @@ fn main() {
         Err(_) => None,
     } {
         Some(c) => c,
-        None => !0
+        None => !0,
     };
     std::process::exit(exit_status);
 }

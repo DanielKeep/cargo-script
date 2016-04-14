@@ -1,15 +1,13 @@
-/*
-Copyright ⓒ 2015 cargo-script contributors.
-
-Licensed under the MIT license (see LICENSE or <http://opensource.org
-/licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
-<http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
-files in the project carrying such notice may not be copied, modified,
-or distributed except according to those terms.
-*/
-/*!
-This module is for platform-specific stuff.
-*/
+// Copyright ⓒ 2015 cargo-script contributors.
+//
+// Licensed under the MIT license (see LICENSE or <http://opensource.org
+// /licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
+// <http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
+// files in the project carrying such notice may not be copied, modified,
+// or distributed except according to those terms.
+//
+//! This module is for platform-specific stuff.
+//!
 
 pub use self::inner::{current_time, file_last_modified, get_cache_dir_for};
 
@@ -21,20 +19,19 @@ mod inner_unix_or_windows {
     Gets the current system time, in milliseconds since the UNIX epoch.
     */
     pub fn current_time() -> u64 {
-        /*
-        This is kinda dicey, since *ideally* both this function and `file_last_modified` would be using the same underlying APIs.  They are not, insofar as I know.
-
-        At least, not when targetting Windows.
-
-        That said, so long as everything is in the same units and uses the same epoch, it should be fine.
-        */
+        // This is kinda dicey, since *ideally* both this function and `file_last_modified` would be using the same underlying APIs.  They are not, insofar as I know.
+        //
+        // At least, not when targetting Windows.
+        //
+        // That said, so long as everything is in the same units and uses the same epoch, it should be fine.
+        //
         let now_1970_utc = time::now_utc().to_timespec();
         if now_1970_utc.sec < 0 || now_1970_utc.nsec < 0 {
             // Fuck it.
-            return 0
+            return 0;
         }
-        let now_ms_1970_utc = (now_1970_utc.sec as u64 * 1000)
-            + (now_1970_utc.nsec as u64 / 1_000_000);
+        let now_ms_1970_utc = (now_1970_utc.sec as u64 * 1000) +
+                              (now_1970_utc.nsec as u64 / 1_000_000);
         now_ms_1970_utc
     }
 }
@@ -53,8 +50,8 @@ mod inner {
     */
     pub fn file_last_modified(file: &fs::File) -> u64 {
         let mtime_s_1970_utc = file.metadata()
-            .map(|md| md.mtime())
-            .unwrap_or(0);
+                                   .map(|md| md.mtime())
+                                   .unwrap_or(0);
 
         let mtime_s_1970_utc = cmp::max(0, mtime_s_1970_utc);
         mtime_s_1970_utc as u64 * 1000
@@ -66,13 +63,19 @@ mod inner {
     This is chosen to match the location where Cargo places its cache data.
     */
     pub fn get_cache_dir_for<P>(product: P) -> Result<PathBuf, MainError>
-    where P: AsRef<Path> {
+        where P: AsRef<Path>
+    {
         // try $CARGO_HOME then fall back to $HOME
         let home = match env::var_os("CARGO_HOME") {
             Some(val) => val,
-            None => match env::var_os("HOME") {
-                Some(val) => val,
-                None => return Err((Blame::Human, "neither $CARGO_HOME nor $HOME is defined").into())
+            None => {
+                match env::var_os("HOME") {
+                    Some(val) => val,
+                    None => {
+                        return Err((Blame::Human, "neither $CARGO_HOME nor $HOME is defined")
+                                       .into())
+                    }
+                }
             }
         };
 
@@ -80,8 +83,8 @@ mod inner {
             Some(s) => {
                 let folder = format!(".{}", s.to_lowercase());
                 Ok(Path::new(&home).join(folder))
-            },
-            None => Err("product for `get_cache_dir_for` was not utf8".into())
+            }
+            None => Err("product for `get_cache_dir_for` was not utf8".into()),
         }
     }
 }
@@ -106,20 +109,22 @@ pub mod inner {
 
     // This *is* in `uuid-sys` ≤ 0.1.2, but that's broken at time of writing.  Once its fixed, change it back.
     #[link(name="uuid")]
-    extern { pub static FOLDERID_LocalAppData: winapi::KNOWNFOLDERID; }
+    extern "C" {
+        pub static FOLDERID_LocalAppData: winapi::KNOWNFOLDERID;
+    }
 
     /**
     Gets the last-modified time of a file, in milliseconds since the UNIX epoch.
     */
     pub fn file_last_modified(file: &fs::File) -> u64 {
-        use ::std::os::windows::fs::MetadataExt;
+        use std::os::windows::fs::MetadataExt;
 
         const MS_BETWEEN_1601_1970: u64 = 11_644_473_600_000;
 
         let mtime_100ns_1601_utc = file.metadata()
-            .map(|md| md.last_write_time())
-            .unwrap_or(0);
-        let mtime_ms_1601_utc = mtime_100ns_1601_utc / (1000*10);
+                                       .map(|md| md.last_write_time())
+                                       .unwrap_or(0);
+        let mtime_ms_1601_utc = mtime_100ns_1601_utc / (1000 * 10);
 
         // This can obviously underflow... but since files created prior to 1970 are going to be *somewhat rare*, I'm just going to saturate to zero.
         let mtime_ms_1970_utc = mtime_ms_1601_utc.saturating_sub(MS_BETWEEN_1601_1970);
@@ -134,9 +139,10 @@ pub mod inner {
     On Windows, LocalAppData is where user- and machine- specific data should go, but it *might* be more appropriate to use whatever the official name for "Program Data" is, though.
     */
     pub fn get_cache_dir_for<P>(product: P) -> Result<PathBuf, MainError>
-    where P: AsRef<Path> {
+        where P: AsRef<Path>
+    {
         let dir = try!(SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, ::std::ptr::null_mut())
-            .map_err(|e| e.to_string()));
+                           .map_err(|e| e.to_string()));
         Ok(Path::new(&dir).to_path_buf().join(product))
     }
 
@@ -150,16 +156,17 @@ pub mod inner {
         }
     }
 
-    fn SHGetKnownFolderPath(rfid: &winapi::KNOWNFOLDERID, dwFlags: winapi::DWORD, hToken: winapi::HANDLE) -> WinResult<OsString> {
+    fn SHGetKnownFolderPath(rfid: &winapi::KNOWNFOLDERID,
+                            dwFlags: winapi::DWORD,
+                            hToken: winapi::HANDLE)
+                            -> WinResult<OsString> {
         use self::winapi::PWSTR;
         let mut psz_path: PWSTR = unsafe { mem::uninitialized() };
         let hresult = unsafe {
-            shell32::SHGetKnownFolderPath(
-                rfid,
-                dwFlags,
-                hToken,
-                mem::transmute(&mut psz_path as &mut PWSTR as *mut PWSTR)
-            )
+            shell32::SHGetKnownFolderPath(rfid,
+                                          dwFlags,
+                                          hToken,
+                                          mem::transmute(&mut psz_path as &mut PWSTR as *mut PWSTR))
         };
 
         if hresult == winapi::S_OK {

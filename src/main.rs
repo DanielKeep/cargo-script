@@ -1,27 +1,27 @@
-/*
-Copyright ⓒ 2015 cargo-script contributors.
-
-Licensed under the MIT license (see LICENSE or <http://opensource.org
-/licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
-<http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
-files in the project carrying such notice may not be copied, modified,
-or distributed except according to those terms.
-*/
-/*!
-`cargo-script` is a Cargo subcommand designed to let people quickly and easily run Rust "scripts" which can make use of Cargo's package ecosystem.
-
-Or, to put it in other words, it lets you write useful, but small, Rust programs without having to create a new directory and faff about with `Cargo.toml`.
-
-As such, `cargo-script` does two major things:
-
-1. Given a script, it extracts the embedded Cargo manifest and merges it with some sensible defaults.  This manifest, along with the source code, is written to a fresh Cargo package on-disk.
-
-2. It caches the generated and compiled packages, regenerating them only if the script or its metadata have changed.
-*/
+// Copyright ⓒ 2015 cargo-script contributors.
+//
+// Licensed under the MIT license (see LICENSE or <http://opensource.org
+// /licenses/MIT>) or the Apache License, Version 2.0 (see LICENSE of
+// <http://www.apache.org/licenses/LICENSE-2.0>), at your option. All
+// files in the project carrying such notice may not be copied, modified,
+// or distributed except according to those terms.
+//
+//! `cargo-script` is a Cargo subcommand designed to let people quickly and easily run Rust "scripts" which can make use of Cargo's package ecosystem.
+//!
+//! Or, to put it in other words, it lets you write useful, but small, Rust programs without having to create a new directory and faff about with `Cargo.toml`.
+//!
+//! As such, `cargo-script` does two major things:
+//!
+//! 1. Given a script, it extracts the embedded Cargo manifest and merges it with some sensible defaults.  This manifest, along with the source code, is written to a fresh Cargo package on-disk.
+//!
+//! 2. It caches the generated and compiled packages, regenerating them only if the script or its metadata have changed.
+//!
 extern crate clap;
 extern crate env_logger;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
 extern crate rustc_serialize;
 extern crate shaman;
 extern crate toml;
@@ -234,7 +234,7 @@ fn parse_args() -> Args {
         v.map(|v| match v {
             "yes" => true,
             "no" => false,
-            _ => unreachable!()
+            _ => unreachable!(),
         })
     }
 
@@ -270,11 +270,11 @@ fn main() {
         Ok(0) => (),
         Ok(code) => {
             std::process::exit(code);
-        },
+        }
         Err(ref err) if err.is_human() => {
             writeln!(stderr, "error: {}", err).unwrap();
             std::process::exit(1);
-        },
+        }
         Err(ref err) => {
             writeln!(stderr, "internal error: {}", err).unwrap();
             std::process::exit(1);
@@ -286,12 +286,11 @@ fn try_main() -> Result<i32> {
     let args = parse_args();
     info!("Arguments: {:?}", args);
 
-    /*
-    If we've been asked to clear the cache, do that *now*.  There are two reasons:
-
-    1. Do it *before* we call `decide_action_for` such that this flag *also* acts as a synonym for `--force`.
-    2. Do it *before* we start trying to read the input so that, later on, we can make `<script>` optional, but still supply `--clear-cache`.
-    */
+    // If we've been asked to clear the cache, do that *now*.  There are two reasons:
+    //
+    // 1. Do it *before* we call `decide_action_for` such that this flag *also* acts as a synonym for `--force`.
+    // 2. Do it *before* we start trying to read the input so that, later on, we can make `<script>` optional, but still supply `--clear-cache`.
+    //
     if args.clear_cache {
         try!(clean_cache(0));
 
@@ -314,8 +313,8 @@ fn try_main() -> Result<i32> {
             let (path, mut file) = try!(find_script(script).ok_or("could not find script"));
 
             script_name = path.file_stem()
-                .map(|os| os.to_string_lossy().into_owned())
-                .unwrap_or("unknown".into());
+                              .map(|os| os.to_string_lossy().into_owned())
+                              .unwrap_or("unknown".into());
 
             let mut body = String::new();
             try!(file.read_to_string(&mut body));
@@ -326,28 +325,26 @@ fn try_main() -> Result<i32> {
             content = body;
 
             Input::File(&script_name, &script_path, &content, mtime)
-        },
+        }
         (Some(expr), true, false) => {
             content = expr;
             Input::Expr(&content)
-        },
+        }
         (Some(loop_), false, true) => {
             content = loop_;
             Input::Loop(&content, args.count)
-        },
+        }
         (None, _, _) => try!(Err((Blame::Human, consts::NO_ARGS_MESSAGE))),
-        _ => try!(Err((Blame::Human,
-            "cannot specify both --expr and --loop")))
+        _ => try!(Err((Blame::Human, "cannot specify both --expr and --loop"))),
     };
     info!("input: {:?}", input);
 
-    /*
-    Sort out the dependencies.  We want to do a few things:
-
-    - Sort them so that they hash consistently.
-    - Check for duplicates.
-    - Expand `pkg` into `pkg=*`.
-    */
+    // Sort out the dependencies.  We want to do a few things:
+    //
+    // - Sort them so that they hash consistently.
+    // - Check for duplicates.
+    // - Expand `pkg` into `pkg=*`.
+    //
     let deps = {
         use std::collections::HashMap;
         use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -357,13 +354,14 @@ fn try_main() -> Result<i32> {
             // Append '=*' if it needs it.
             let dep = match dep.find('=') {
                 Some(_) => dep,
-                None => dep + "=*"
+                None => dep + "=*",
             };
 
             let mut parts = dep.splitn(2, '=');
             let name = parts.next().expect("dependency is missing name");
             let version = parts.next().expect("dependency is missing version");
-            assert!(parts.next().is_none(), "dependency somehow has three parts?!");
+            assert!(parts.next().is_none(),
+                    "dependency somehow has three parts?!");
 
             if name == "" {
                 try!(Err((Blame::Human, "cannot have empty dependency package name")));
@@ -376,14 +374,16 @@ fn try_main() -> Result<i32> {
             match deps.entry(name.into()) {
                 Vacant(ve) => {
                     ve.insert(version.into());
-                },
+                }
                 Occupied(oe) => {
                     // This is *only* a problem if the versions don't match.  We won't try to do anything clever in terms of upgrading or resolving or anything... exact match or go home.
                     let existing = oe.get();
                     if &version != existing {
                         try!(Err((Blame::Human,
-                            format!("conflicting versions for dependency '{}': '{}', '{}'",
-                                name, existing, version))));
+                                  format!("conflicting versions for dependency '{}': '{}', '{}'",
+                                          name,
+                                          existing,
+                                          version))));
                     }
                 }
             }
@@ -396,25 +396,27 @@ fn try_main() -> Result<i32> {
     };
     info!("deps: {:?}", deps);
 
-    /*
-    Generate the prelude items, if we need any.  Again, ensure consistent and *valid* sorting.
-    */
+    // Generate the prelude items, if we need any.  Again, ensure consistent and *valid* sorting.
+    //
     let prelude_items = {
-        let unstable_features = args.unstable_features.iter()
-            .map(|uf| format!("#![feature({})]", uf));
-        let dep_externs = args.dep_extern.iter()
-            .map(|d| match d.find('=') {
-                Some(i) => &d[..i],
-                None => &d[..]
-            })
-            .map(|d| match d.contains('-') {
-                true => Cow::from(d.replace("-", "_")),
-                false => Cow::from(d)
-            })
-            .map(|d| format!("#[macro_use] extern crate {};", d));
+        let unstable_features = args.unstable_features
+                                    .iter()
+                                    .map(|uf| format!("#![feature({})]", uf));
+        let dep_externs = args.dep_extern
+                              .iter()
+                              .map(|d| match d.find('=') {
+                                  Some(i) => &d[..i],
+                                  None => &d[..],
+                              })
+                              .map(|d| match d.contains('-') {
+                                  true => Cow::from(d.replace("-", "_")),
+                                  false => Cow::from(d),
+                              })
+                              .map(|d| format!("#[macro_use] extern crate {};", d));
 
-        let externs = args.extern_.iter()
-            .map(|n| format!("#[macro_use] extern crate {};", n));
+        let externs = args.extern_
+                          .iter()
+                          .map(|n| format!("#[macro_use] extern crate {};", n));
 
         let mut items: Vec<_> = unstable_features.chain(dep_externs).chain(externs).collect();
         items.sort();
@@ -423,18 +425,16 @@ fn try_main() -> Result<i32> {
     info!("prelude_items: {:?}", prelude_items);
 
     // Work out what to do.
-    let action = try!(decide_action_for(
-        &input,
-        deps,
-        prelude_items,
-        args.debug,
-        args.pkg_path,
-        args.gen_pkg_only,
-        args.build_only,
-        args.force,
-        args.features,
-        args.use_bincache,
-    ));
+    let action = try!(decide_action_for(&input,
+                                        deps,
+                                        prelude_items,
+                                        args.debug,
+                                        args.pkg_path,
+                                        args.gen_pkg_only,
+                                        args.build_only,
+                                        args.force,
+                                        args.features,
+                                        args.use_bincache));
     info!("action: {:?}", action);
 
     try!(gen_pkg_and_compile(&input, &action));
@@ -453,13 +453,17 @@ fn try_main() -> Result<i32> {
 
     // Run it!
     if action.execute {
-        let exe_path = try!(get_exe_path(&input, action.use_bincache, &action.pkg_path, &action.metadata));
+        let exe_path = try!(get_exe_path(&input,
+                                         action.use_bincache,
+                                         &action.pkg_path,
+                                         &action.metadata));
         info!("executing {:?}", exe_path);
-        match try!(Command::new(exe_path).args(&args.args).status()
-            .map(|st| st.code().unwrap_or(1)))
-        {
+        match try!(Command::new(exe_path)
+                       .args(&args.args)
+                       .status()
+                       .map(|st| st.code().unwrap_or(1))) {
             0 => (),
-            n => return Ok(n)
+            n => return Ok(n),
         }
     }
 
@@ -492,7 +496,9 @@ fn clean_cache(max_age: u64) -> Result<()> {
     for child in try!(fs::read_dir(cache_dir)) {
         let child = try!(child);
         let path = child.path();
-        if path.is_file() { continue }
+        if path.is_file() {
+            continue;
+        }
 
         info!("checking: {:?}", path);
 
@@ -540,10 +546,7 @@ Generate and compile a package from the input.
 
 Why take `PackageMetadata`?  To ensure that any information we need to depend on for compilation *first* passes through `decide_action_for` *and* is less likely to not be serialised with the rest of the metadata.
 */
-fn gen_pkg_and_compile(
-    input: &Input,
-    action: &InputAction,
-) -> Result<()> {
+fn gen_pkg_and_compile(input: &Input, action: &InputAction) -> Result<()> {
     let pkg_path = &action.pkg_path;
     let meta = &action.metadata;
     let old_meta = action.old_metadata.as_ref();
@@ -576,7 +579,7 @@ fn gen_pkg_and_compile(
             FileOverwrite::Same => (),
             FileOverwrite::Changed { new_hash } => {
                 meta.manifest_hash = new_hash;
-            },
+            }
         }
         mani_path
     };
@@ -602,23 +605,21 @@ fn gen_pkg_and_compile(
 
     let meta = meta;
 
-    /*
-    *bursts through wall* It's Cargo Time! (Possibly)
-
-    Note that there's a complication here: we want to *temporarily* continue *even if compilation fails*.  This is because if we don't, then every time you run `cargo script` on a script you're currently modifying, and it fails to compile, your compiled dependencies get obliterated.
-
-    This is *really* annoying.
-
-    As such, we want to ignore any compilation problems until *after* we've written the metadata and disarmed the cleanup callback.
-    */
+    // bursts through wall* It's Cargo Time! (Possibly)
+    //
+    // Note that there's a complication here: we want to *temporarily* continue *even if compilation fails*.  This is because if we don't, then every time you run `cargo script` on a script you're currently modifying, and it fails to compile, your compiled dependencies get obliterated.
+    //
+    // This is *really* annoying.
+    //
+    // As such, we want to ignore any compilation problems until *after* we've written the metadata and disarmed the cleanup callback.
+    //
     let mut compile_err = Ok(());
     if action.compile {
         info!("compiling...");
         let mut cmd = Command::new("cargo");
         cmd.arg("build")
-            .arg("--manifest-path")
-            .arg(&*mani_path.to_string_lossy())
-            ;
+           .arg("--manifest-path")
+           .arg(&*mani_path.to_string_lossy());
 
         if action.use_bincache {
             cmd.env("CARGO_TARGET_DIR", try!(get_binary_cache_path()));
@@ -633,19 +634,23 @@ fn gen_pkg_and_compile(
             cmd.arg(features);
         }
 
-        compile_err = cmd.status().map_err(|e| Into::<MainError>::into(e))
-            .and_then(|st|
-                match st.code() {
-                    Some(0) => Ok(()),
-                    Some(st) => Err(format!("cargo failed with status {}", st).into()),
-                    None => Err("cargo failed".into())
-                });
+        compile_err = cmd.status()
+                         .map_err(|e| Into::<MainError>::into(e))
+                         .and_then(|st| match st.code() {
+                             Some(0) => Ok(()),
+                             Some(st) => Err(format!("cargo failed with status {}", st).into()),
+                             None => Err("cargo failed".into()),
+                         });
 
         if compile_err.is_ok() && action.use_bincache {
             // Write out the metadata hash to tie this executable to a particular chunk of metadata.  This is to avoid issues with multiple scripts with the same name being compiled to a common target directory.
             let meta_hash = action.metadata.sha1_hash();
             info!("writing meta hash: {:?}...", meta_hash);
-            let exe_path = get_exe_path(input, action.use_bincache, &action.pkg_path, &action.metadata).unwrap();
+            let exe_path = get_exe_path(input,
+                                        action.use_bincache,
+                                        &action.pkg_path,
+                                        &action.metadata)
+                               .unwrap();
             let exe_meta_hash_path = exe_path.with_extension("meta-hash");
             let mut f = try!(fs::File::create(&exe_meta_hash_path));
             try!(write!(&mut f, "{}", meta_hash));
@@ -754,35 +759,35 @@ impl PackageMetadata {
 /**
 For the given input, this constructs the package metadata and checks the cache to see what should be done.
 */
-fn decide_action_for(
-    input: &Input,
-    deps: Vec<(String, String)>,
-    prelude: Vec<String>,
-    debug: bool,
-    pkg_path: Option<String>,
-    gen_pkg_only: bool,
-    build_only: bool,
-    force: bool,
-    features: Option<String>,
-    use_bincache: Option<bool>,
-) -> Result<InputAction> {
-    let (pkg_path, using_cache) = pkg_path.map(|p| (p.into(), false))
-        .unwrap_or_else(|| {
-            // This can't fail.  Seriously, we're *fucked* if we can't work this out.
-            let cache_path = get_cache_path().unwrap();
-            info!("cache_path: {:?}", cache_path);
+fn decide_action_for(input: &Input,
+                     deps: Vec<(String, String)>,
+                     prelude: Vec<String>,
+                     debug: bool,
+                     pkg_path: Option<String>,
+                     gen_pkg_only: bool,
+                     build_only: bool,
+                     force: bool,
+                     features: Option<String>,
+                     use_bincache: Option<bool>)
+                     -> Result<InputAction> {
+    let (pkg_path, using_cache) =
+        pkg_path.map(|p| (p.into(), false))
+                .unwrap_or_else(|| {
+                    // This can't fail.  Seriously, we're *fucked* if we can't work this out.
+                    let cache_path = get_cache_path().unwrap();
+                    info!("cache_path: {:?}", cache_path);
 
-            let id = {
-                let deps_iter = deps.iter()
-                    .map(|&(ref n, ref v)| (n as &str, v as &str));
+                    let id = {
+                        let deps_iter = deps.iter()
+                                            .map(|&(ref n, ref v)| (n as &str, v as &str));
 
-                // Again, also fucked if we can't work this out.
-                input.compute_id(deps_iter).unwrap()
-            };
-            info!("id: {:?}", id);
+                        // Again, also fucked if we can't work this out.
+                        input.compute_id(deps_iter).unwrap()
+                    };
+                    info!("id: {:?}", id);
 
-            (cache_path.join(&id), true)
-        });
+                    (cache_path.join(&id), true)
+                });
     info!("pkg_path: {:?}", pkg_path);
     info!("using_cache: {:?}", using_cache);
 
@@ -792,11 +797,10 @@ fn decide_action_for(
     // Construct input metadata.
     let input_meta = {
         let (path, mtime) = match *input {
-            Input::File(_, path, _, mtime)
-                => (Some(path.to_string_lossy().into_owned()), Some(mtime)),
-            Input::Expr(..)
-            | Input::Loop(..)
-                => (None, None)
+            Input::File(_, path, _, mtime) => {
+                (Some(path.to_string_lossy().into_owned()), Some(mtime))
+            }
+            Input::Expr(..) | Input::Loop(..) => (None, None),
         };
         PackageMetadata {
             path: path,
@@ -859,17 +863,20 @@ fn decide_action_for(
     action.old_metadata = Some(cache_meta);
 
     // Next test: does the executable exist at all?
-    let exe_path = get_exe_path(input, action.use_bincache, &action.pkg_path, &action.metadata).unwrap();
+    let exe_path = get_exe_path(input,
+                                action.use_bincache,
+                                &action.pkg_path,
+                                &action.metadata)
+                       .unwrap();
     if !exe_path.is_file() {
         info!("recompiling because: executable doesn't exist or isn't a file");
         bail!(compile: true)
     }
 
-    /*
-    Finally: check to see if `{exe_path}.meta-hash` exists and contains a hash that matches the metadata.  Yes, this is somewhat round-about, but we need to do this to account for cases where Cargo's target directory has been set to a fixed, shared location.
-
-    Note that we *do not* do this if we aren't using the cache.
-    */
+    // Finally: check to see if `{exe_path}.meta-hash` exists and contains a hash that matches the metadata.  Yes, this is somewhat round-about, but we need to do this to account for cases where Cargo's target directory has been set to a fixed, shared location.
+    //
+    // Note that we *do not* do this if we aren't using the cache.
+    //
     if action.use_bincache {
         let exe_meta_hash_path = exe_path.clone().with_extension("meta-hash");
         if !exe_meta_hash_path.is_file() {
@@ -898,11 +905,16 @@ Figures out where the output executable for the input should be.
 
 Note that this depends on Cargo *not* suddenly changing its mind about where stuff lives.  In theory, I should be able to just *ask* Cargo for this information, but damned if I can't find an easy way to do it...
 */
-fn get_exe_path<P>(input: &Input, use_bincache: bool, pkg_path: P, meta: &PackageMetadata) -> Result<PathBuf>
-where P: AsRef<Path> {
+fn get_exe_path<P>(input: &Input,
+                   use_bincache: bool,
+                   pkg_path: P,
+                   meta: &PackageMetadata)
+                   -> Result<PathBuf>
+    where P: AsRef<Path>
+{
     let profile = match meta.debug {
         true => "debug",
-        false => "release"
+        false => "release",
     };
     let target_path = if use_bincache {
         try!(get_binary_cache_path())
@@ -918,7 +930,8 @@ where P: AsRef<Path> {
 Load the package metadata, given the path to the package's cache folder.
 */
 fn get_pkg_metadata<P>(pkg_path: P) -> Result<PackageMetadata>
-where P: AsRef<Path> {
+    where P: AsRef<Path>
+{
     let meta_path = get_pkg_metadata_path(pkg_path);
     debug!("meta_path: {:?}", meta_path);
     let mut meta_file = try!(fs::File::open(&meta_path));
@@ -929,7 +942,7 @@ where P: AsRef<Path> {
         s
     };
     let meta: PackageMetadata = try!(rustc_serialize::json::decode(&meta_str)
-        .map_err(|err| err.to_string()));
+                                         .map_err(|err| err.to_string()));
 
     Ok(meta)
 }
@@ -938,7 +951,8 @@ where P: AsRef<Path> {
 Work out the path to a package's metadata file.
 */
 fn get_pkg_metadata_path<P>(pkg_path: P) -> PathBuf
-where P: AsRef<Path> {
+    where P: AsRef<Path>
+{
     pkg_path.as_ref().join(consts::METADATA_FILE)
 }
 
@@ -946,12 +960,12 @@ where P: AsRef<Path> {
 Save the package metadata, given the path to the package's cache folder.
 */
 fn write_pkg_metadata<P>(pkg_path: P, meta: &PackageMetadata) -> Result<()>
-where P: AsRef<Path> {
+    where P: AsRef<Path>
+{
     let meta_path = get_pkg_metadata_path(pkg_path);
     debug!("meta_path: {:?}", meta_path);
     let mut meta_file = try!(fs::File::create(&meta_path));
-    let meta_str = try!(rustc_serialize::json::encode(meta)
-        .map_err(|err| err.to_string()));
+    let meta_str = try!(rustc_serialize::json::encode(meta).map_err(|err| err.to_string()));
     try!(write!(&mut meta_file, "{}", meta_str));
     try!(meta_file.flush());
     Ok(())
@@ -977,7 +991,8 @@ fn get_binary_cache_path() -> Result<PathBuf> {
 Attempts to locate the script specified by the given path.  If the path as-given doesn't yield anything, it will try adding file extensions.
 */
 fn find_script<P>(path: P) -> Option<(PathBuf, fs::File)>
-where P: AsRef<Path> {
+    where P: AsRef<Path>
+{
     let path = path.as_ref();
 
     // Try the path directly.
@@ -1049,7 +1064,8 @@ impl<'a> Input<'a> {
     Compute the package ID for the input.  This is used as the name of the cache folder into which the Cargo package will be generated.
     */
     pub fn compute_id<'dep, DepIt>(&self, deps: DepIt) -> Result<OsString>
-    where DepIt: IntoIterator<Item=(&'dep str, &'dep str)> {
+        where DepIt: IntoIterator<Item = (&'dep str, &'dep str)>
+    {
         use shaman::digest::Digest;
         use shaman::sha1::Sha1;
         use Input::*;
@@ -1079,9 +1095,13 @@ impl<'a> Input<'a> {
                 id.push("file-");
                 id.push(name);
                 id.push("-");
-                id.push(if STUB_HASHES { "stub" } else { &*digest });
+                id.push(if STUB_HASHES {
+                    "stub"
+                } else {
+                    &*digest
+                });
                 Ok(id)
-            },
+            }
             Expr(content) => {
                 let mut hasher = hash_deps();
 
@@ -1091,15 +1111,23 @@ impl<'a> Input<'a> {
 
                 let mut id = OsString::new();
                 id.push("expr-");
-                id.push(if STUB_HASHES { "stub" } else { &*digest });
+                id.push(if STUB_HASHES {
+                    "stub"
+                } else {
+                    &*digest
+                });
                 Ok(id)
-            },
+            }
             Loop(content, count) => {
                 let mut hasher = hash_deps();
 
                 // Make sure to include the [non-]presence of the `--count` flag in the flag, since it changes the actual generated script output.
                 hasher.input_str("count:");
-                hasher.input_str(if count { "true;" } else { "false;" });
+                hasher.input_str(if count {
+                    "true;"
+                } else {
+                    "false;"
+                });
 
                 hasher.input_str(&content);
                 let mut digest = hasher.result_str();
@@ -1107,9 +1135,13 @@ impl<'a> Input<'a> {
 
                 let mut id = OsString::new();
                 id.push("loop-");
-                id.push(if STUB_HASHES { "stub" } else { &*digest });
+                id.push(if STUB_HASHES {
+                    "stub"
+                } else {
+                    &*digest
+                });
                 Ok(id)
-            },
+            }
         }
     }
 }
@@ -1127,14 +1159,17 @@ fn hash_str(s: &str) -> String {
 
 enum FileOverwrite {
     Same,
-    Changed { new_hash: String },
+    Changed {
+        new_hash: String,
+    },
 }
 
 /**
 Overwrite a file if and only if the contents have changed.
 */
 fn overwrite_file<P>(path: P, content: &str, hash: Option<&str>) -> Result<FileOverwrite>
-where P: AsRef<Path> {
+    where P: AsRef<Path>
+{
     debug!("overwrite_file({:?}, _, {:?})", path.as_ref(), hash);
     let new_hash = hash_str(content);
     if Some(&*new_hash) == hash {
