@@ -19,6 +19,7 @@ As such, `cargo-script` does two major things:
 2. It caches the generated and compiled packages, regenerating them only if the script or its metadata have changed.
 */
 extern crate clap;
+extern crate curl;
 extern crate env_logger;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate log;
@@ -41,6 +42,7 @@ mod error;
 mod manifest;
 mod platform;
 mod util;
+mod web;
 
 use std::borrow::Cow;
 use std::error::Error;
@@ -107,7 +109,7 @@ fn parse_args() -> Args {
             Major script modes.
             */
             .arg(Arg::with_name("script")
-                .help("Script file (with or without extension) to execute.")
+                .help("Script file (with or without extension) or URL to execute.")
                 .index(1)
             )
             .arg(Arg::with_name("args")
@@ -311,21 +313,28 @@ fn try_main() -> Result<i32> {
 
     let input = match (args.script, args.expr, args.loop_) {
         (Some(script), false, false) => {
-            let (path, mut file) = try!(find_script(script).ok_or("could not find script"));
+            if script.starts_with("https://") || script.starts_with("http://") {
+                // If the script path contains the HTTP or HTTPS protocols, download and execute it as an expression.
+                content = web::download_script(&script).unwrap();
+                Input::Expr(&content)
+            } else {
+                // If the script does not define a protocol, it is a file on the local filesystem.
+                let (path, mut file) = try!(find_script(script).ok_or("could not find script"));
 
-            script_name = path.file_stem()
-                .map(|os| os.to_string_lossy().into_owned())
-                .unwrap_or("unknown".into());
+                script_name = path.file_stem()
+                    .map(|os| os.to_string_lossy().into_owned())
+                    .unwrap_or("unknown".into());
 
-            let mut body = String::new();
-            try!(file.read_to_string(&mut body));
+                let mut body = String::new();
+                try!(file.read_to_string(&mut body));
 
-            let mtime = platform::file_last_modified(&file);
+                let mtime = platform::file_last_modified(&file);
 
-            script_path = try!(std::env::current_dir()).join(path);
-            content = body;
+                script_path = try!(std::env::current_dir()).join(path);
+                content = body;
 
-            Input::File(&script_name, &script_path, &content, mtime)
+                Input::File(&script_name, &script_path, &content, mtime)
+            }
         },
         (Some(expr), true, false) => {
             content = expr;
@@ -1117,7 +1126,7 @@ impl<'a> Input<'a> {
 /**
 Shorthand for hashing a string.
 */
-fn hash_str(s: &str) -> String {
+fn hash_str(s: &str) ->  String {
     use shaman::digest::Digest;
     use shaman::sha1::Sha1;
     let mut hasher = Sha1::new();

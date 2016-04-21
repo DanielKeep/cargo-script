@@ -19,6 +19,7 @@ rustc-serialize = "0.3.16"
 shaman = "0.1.0"
 time = "0.1.25"
 toml = "0.1.20"
+curl = "0.2.18"
 
 [dependencies.clap]
 version = "1.4.5"
