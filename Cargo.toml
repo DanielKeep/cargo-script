@@ -19,13 +19,7 @@ rustc-serialize = "0.3.16"
 shaman = "0.1.0"
 time = "0.1.25"
 toml = "0.1.20"
-
-[dependencies.clap]
-version = "1.4.5"
-
-# Disable the "color" feature because it just outputs garbage on Windows.
-default-features = false
-features = ["suggestions"]
+clap = "2.4.0"
 
 [target.i686-pc-windows-gnu.dependencies]
 ole32-sys = "0.1.0"
