@@ -58,3 +58,11 @@ fn test_expr_panic() {
     let out = cargo_script!("-e", with_output_marker!("panic!()")).unwrap();
     assert!(!out.success());
 }
+
+#[test]
+fn test_expr_comma() {
+    let out = cargo_script!("-e", with_output_marker!("(1, 2)")).unwrap();
+    scan!(out.stdout_output();
+        ("(1, 2)") => ()
+    ).unwrap()
+}
