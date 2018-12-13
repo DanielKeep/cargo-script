@@ -25,7 +25,7 @@ chan = { version = "0.1.23", optional = true }
 clap = "2.32.0"
 env_logger = "0.5.12"
 hoedown = "6.0.0"
-itertools = "0.5.10" # version 0.6 incompatible with Rust < 1.12
+itertools = "0.8.0"
 lazy_static = "1.2.0"
 log = "0.4.6"
 open = "1.2.2"
