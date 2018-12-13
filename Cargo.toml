@@ -34,7 +34,7 @@ rustc-serialize = "0.3.24"
 semver = "0.9.0"
 shaman = "0.1.0"
 time = "0.1.36"
-toml = "0.2.1" # toml 0.3 incompatible with Rust < 1.14.
+toml = "0.4.10"
 
 [target.'cfg(windows)'.dependencies]
 ole32-sys = "0.2.0"
