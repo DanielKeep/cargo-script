@@ -54,7 +54,7 @@ atty = "0.2.2"
 [dev-dependencies]
 gcc = "0.3.55"
 scan-rules = "0.2.0"
-tempdir = "0.3.5"
+tempdir = "0.3.7"
 
 [profile.release]
 lto = true
