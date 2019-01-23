@@ -226,8 +226,6 @@ mod inner {
 pub mod inner {
     #![allow(non_snake_case)]
 
-    extern crate ole32;
-    extern crate shell32;
     extern crate winapi;
 
     pub use super::inner_unix_or_windows::current_time;
@@ -241,38 +239,6 @@ pub mod inner {
     use std::os::windows::ffi::{OsStrExt, OsStringExt};
     use error::MainError;
     use super::MigrationKind;
-
-    #[cfg(old_rustc_windows_linking_behaviour)]
-    mod uuid {
-        // This *is* in `uuid-sys` ≤ 0.1.2, but it doesn't work in Rust < 1.15.
-        #[link(name="uuid")]
-        extern {
-            static FOLDERID_LocalAppData: super::winapi::KNOWNFOLDERID;
-            static FOLDERID_RoamingAppData: super::winapi::KNOWNFOLDERID;
-        }
-
-        pub unsafe fn local_app_data() -> &'static super::winapi::KNOWNFOLDERID {
-            &FOLDERID_LocalAppData
-        }
-
-        pub unsafe fn roaming_app_data() -> &'static super::winapi::KNOWNFOLDERID {
-            &FOLDERID_RoamingAppData
-        }
-    }
-
-    #[cfg(not(old_rustc_windows_linking_behaviour))]
-    mod uuid {
-        // WARNING: do not use with rustc < 1.15; it will cause linking errors.
-        extern crate uuid;
-
-        pub unsafe fn local_app_data() -> &'static super::winapi::KNOWNFOLDERID {
-            &uuid::FOLDERID_LocalAppData
-        }
-
-        pub unsafe fn roaming_app_data() -> &'static super::winapi::KNOWNFOLDERID {
-            &uuid::FOLDERID_RoamingAppData
-        }
-    }
 
     /**
     Gets the last-modified time of a file, in milliseconds since the UNIX epoch.
@@ -300,7 +266,7 @@ pub mod inner {
     On Windows, LocalAppData is where user- and machine- specific data should go, but it *might* be more appropriate to use whatever the official name for "Program Data" is, though.
     */
     pub fn get_cache_dir() -> Result<PathBuf, MainError> {
-        let rfid = unsafe { uuid::local_app_data() };
+        let rfid = &winapi::um::knownfolders::FOLDERID_LocalAppData;
         let dir = SHGetKnownFolderPath(rfid, 0, ::std::ptr::null_mut())
             .map_err(|e| e.to_string())?;
         Ok(Path::new(&dir).to_path_buf().join("Cargo"))
@@ -312,7 +278,7 @@ pub mod inner {
     This is *not* chosen to match the location where Cargo places its cache data, because Cargo is *wrong*.  This is at least *less wrong*.
     */
     pub fn get_config_dir() -> Result<PathBuf, MainError> {
-        let rfid = unsafe { uuid::roaming_app_data() };
+        let rfid = &winapi::um::knownfolders::FOLDERID_RoamingAppData;
         let dir = SHGetKnownFolderPath(rfid, 0, ::std::ptr::null_mut())
             .map_err(|e| e.to_string())?;
         Ok(Path::new(&dir).to_path_buf().join("Cargo"))
@@ -320,7 +286,7 @@ pub mod inner {
 
     type WinResult<T> = Result<T, WinError>;
 
-    struct WinError(winapi::HRESULT);
+    struct WinError(winapi::shared::winerror::HRESULT);
 
     impl fmt::Display for WinError {
         fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -328,11 +294,11 @@ pub mod inner {
         }
     }
 
-    fn SHGetKnownFolderPath(rfid: &winapi::KNOWNFOLDERID, dwFlags: winapi::DWORD, hToken: winapi::HANDLE) -> WinResult<OsString> {
-        use self::winapi::PWSTR;
+    fn SHGetKnownFolderPath(rfid: &winapi::um::shtypes::KNOWNFOLDERID, dwFlags: winapi::shared::minwindef::DWORD, hToken: winapi::shared::ntdef::HANDLE) -> WinResult<OsString> {
+        use self::winapi::shared::ntdef::PWSTR;
         let mut psz_path: PWSTR = unsafe { mem::uninitialized() };
         let hresult = unsafe {
-            shell32::SHGetKnownFolderPath(
+            winapi::um::shlobj::SHGetKnownFolderPath(
                 rfid,
                 dwFlags,
                 hToken,
@@ -340,20 +306,20 @@ pub mod inner {
             )
         };
 
-        if hresult == winapi::S_OK {
+        if hresult == winapi::shared::winerror::S_OK {
             let r = unsafe { pwstr_to_os_string(psz_path) };
-            unsafe { ole32::CoTaskMemFree(psz_path as *mut _) };
+            unsafe { winapi::um::combaseapi::CoTaskMemFree(psz_path as *mut _) };
             Ok(r)
         } else {
             Err(WinError(hresult))
         }
     }
 
-    unsafe fn pwstr_to_os_string(ptr: winapi::PWSTR) -> OsString {
+    unsafe fn pwstr_to_os_string(ptr: winapi::shared::ntdef::PWSTR) -> OsString {
         OsStringExt::from_wide(::std::slice::from_raw_parts(ptr, pwstr_len(ptr)))
     }
 
-    unsafe fn pwstr_len(mut ptr: winapi::PWSTR) -> usize {
+    unsafe fn pwstr_len(mut ptr: winapi::shared::ntdef::PWSTR) -> usize {
         let mut len = 0;
         while *ptr != 0 {
             len += 1;
