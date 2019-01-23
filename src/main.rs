@@ -1584,6 +1584,8 @@ fn cargo_target_by_message(input: &Input, manifest: &str, use_bincache: bool, me
     trace!(".. cmd: {:?}", cmd);
 
     let mut child = try!(cmd.spawn());
+    let mut stdout = Vec::new();
+    try!(child.stdout.take().unwrap().read_to_end(&mut stdout));
     match try!(child.wait()).code() {
         Some(0) => (),
         Some(st) => return Err(format!("could not determine target filename: cargo exited with status {}", st).into()),
@@ -1591,7 +1593,7 @@ fn cargo_target_by_message(input: &Input, manifest: &str, use_bincache: bool, me
     }
 
     let mut line = String::with_capacity(1024);
-    let mut stdout = BufReader::new(child.stdout.take().unwrap());
+    let mut stdout = BufReader::new(std::io::Cursor::new(stdout));
     let null = json::Json::Null;
     let package_name = input.package_name();
 
