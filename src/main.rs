@@ -390,7 +390,7 @@ fn parse_args() -> SubCommand {
 }
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
     info!("starting");
     info!("args: {:?}", std::env::args().collect::<Vec<_>>());
     let stderr = &mut std::io::stderr();
