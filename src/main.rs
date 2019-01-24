@@ -26,8 +26,10 @@ extern crate lazy_static;
 extern crate log;
 extern crate open;
 extern crate regex;
-extern crate rustc_serialize;
 extern crate semver;
+#[macro_use]
+extern crate serde;
+extern crate serde_json;
 extern crate shaman;
 extern crate toml;
 
@@ -969,7 +971,7 @@ The metadata here serves two purposes:
 1. It records everything necessary for compilation and execution of a package.
 2. It records everything that must be exactly the same in order for a cached executable to still be valid, in addition to the content hash.
 */
-#[derive(Clone, Debug, Eq, PartialEq, RustcDecodable, RustcEncodable)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 struct PackageMetadata {
     /// Path to the script file.
     path: Option<String>,
@@ -1228,7 +1230,7 @@ where
         s
     };
     let meta: PackageMetadata =
-        rustc_serialize::json::decode(&meta_str).map_err(|err| err.to_string())?;
+        serde_json::from_str(&meta_str).map_err(|err| err.to_string())?;
 
     Ok(meta)
 }
@@ -1253,7 +1255,7 @@ where
     let meta_path = get_pkg_metadata_path(pkg_path);
     debug!("meta_path: {:?}", meta_path);
     let mut meta_file = fs::File::create(&meta_path)?;
-    let meta_str = rustc_serialize::json::encode(meta).map_err(|err| err.to_string())?;
+    let meta_str = serde_json::to_string(meta).map_err(|err| err.to_string())?;
     write!(&mut meta_file, "{}", meta_str)?;
     meta_file.flush()?;
     Ok(())
@@ -1651,8 +1653,8 @@ fn cargo_target_by_message(
     use_bincache: bool,
     meta: &PackageMetadata,
 ) -> Result<PathBuf> {
-    use rustc_serialize::json;
     use std::io::{BufRead, BufReader};
+    use std::str::FromStr;
 
     trace!(
         "cargo_target_by_message(_, {:?}, {:?}, _)",
@@ -1686,7 +1688,7 @@ fn cargo_target_by_message(
 
     let mut line = String::with_capacity(1024);
     let mut stdout = BufReader::new(child.stdout.take().unwrap());
-    let null = json::Json::Null;
+    let null = serde_json::Value::Null;
     let package_name = input.package_name();
 
     let mut line_num = 0;
@@ -1702,17 +1704,17 @@ fn cargo_target_by_message(
             );
         }
 
-        let msg = json::Json::from_str(line.trim()).map_err(Box::new)?;
+        let msg = serde_json::Value::from_str(line.trim()).map_err(Box::new)?;
 
         // Is this the message we're looking for?
-        if msg.find("reason").unwrap_or(&null).as_string() != Some("compiler-artifact") {
+        if msg.get("reason").unwrap_or(&null).as_str() != Some("compiler-artifact") {
             trace!("   couldn't find `compiler-artifact`");
             continue;
         }
         if msg
-            .find_path(&["target", "name"])
+            .pointer("/target/name")
             .unwrap_or(&null)
-            .as_string()
+            .as_str()
             != Some(&package_name)
         {
             trace!(
@@ -1724,11 +1726,11 @@ fn cargo_target_by_message(
 
         // Looks like it; grab the path.
         let exe_path = msg
-            .find_path(&["filenames"])
+            .get("filenames")
             .expect("could not find `filenames` in json message")
             .as_array()
             .expect("`filenames` in json message was not an array")[0]
-            .as_string()
+            .as_str()
             .expect("`filenames[0]` in json message was not a string");
 
         return Ok(exe_path.into());
