@@ -111,3 +111,12 @@ fn test_script_cs_env() {
     )
     .unwrap()
 }
+
+#[test]
+fn test_script_2018_edition() {
+    let out = cargo_script!("tests/data/script-2018-edition.rs").unwrap();
+    assert!(out.success());
+    scan!(out.stdout_output();
+        ("Some(1)") => ()
+    ).unwrap()
+}
