@@ -5,14 +5,14 @@
 Some of `cargo-script`'s features include:
 
 - Reading Cargo manifests embedded in Rust scripts.
-- Caching compiled artefacts (including dependencies) to amortise build times.
+- Caching compiled artifacts (including dependencies) to amortise build times.
 - Supporting executable Rust scripts via UNIX hashbangs and Windows file associations.
 - Evaluating expressions on the command-line.
 - Using expressions as stream filters (*i.e.* for use in command pipelines).
 - Running unit tests and benchmarks from scripts.
 - Custom templates for command-line expressions and filters.
 
-**Note**: `cargo-script` *does not* work when Cargo is instructed to use a target architecture different to the default host architecture.
+**Note**: `cargo-script` *does not* work when Cargo is instructed to use a target architecture different from the default host architecture.
 
 Table of contents:
 
