@@ -10,18 +10,15 @@ or distributed except according to those terms.
 /*!
 This module is concerned with how `cargo-script` extracts the manfiest from a script file.
 */
-use hoedown;
-use regex;
-
-use self::regex::Regex;
-use std::collections::HashMap;
-use std::path::Path;
-use toml;
-
 use crate::consts;
 use crate::error::{Blame, MainError, Result};
 use crate::templates;
 use crate::Input;
+use lazy_static::lazy_static;
+use log::{error, info};
+use regex::Regex;
+use std::collections::HashMap;
+use std::path::Path;
 
 lazy_static! {
     static ref RE_SHORT_MANIFEST: Regex =
@@ -666,7 +663,7 @@ fn find_code_block_manifest(s: &str) -> Option<(Manifest<'_>, &str)> {
 Extracts the first `Cargo` fenced code block from a chunk of Markdown.
 */
 fn scrape_markdown_manifest(content: &str) -> Result<Option<String>> {
-    use self::hoedown::{Buffer, Markdown, Render};
+    use hoedown::{Buffer, Markdown, Render};
 
     // To match librustdoc/html/markdown.rs, HOEDOWN_EXTENSIONS.
     let exts = hoedown::NO_INTRA_EMPHASIS

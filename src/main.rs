@@ -18,14 +18,9 @@ As such, `cargo-script` does two major things:
 
 2. It caches the generated and compiled packages, regenerating them only if the script or its metadata have changed.
 */
-#[macro_use]
-extern crate crossbeam_channel;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde;
+use lazy_static::lazy_static;
+use log::{debug, error, info, log_enabled, trace};
+use serde::{Deserialize, Serialize};
 
 /**
 If this is set to `true`, the digests used for package IDs will be replaced with "stub" to make testing a bit easier.  Obviously, you don't want this `true` for release...
@@ -1401,9 +1396,9 @@ impl<'a> Input<'a> {
     where
         DepIt: IntoIterator<Item = (&'dep str, &'dep str)>,
     {
+        use crate::Input::*;
         use shaman::digest::Digest;
         use shaman::sha1::Sha1;
-        use crate::Input::*;
 
         let hash_deps = || {
             let mut hasher = Sha1::new();

@@ -13,12 +13,9 @@ This module deals with setting up file associations.
 Since this only makes sense on Windows, this entire module is Windows-only.
 */
 #![cfg(windows)]
-use itertools;
-use winreg;
 
-use self::itertools::Itertools;
-use clap;
 use crate::error::{Blame, Result};
+use itertools::Itertools;
 use std::io;
 
 #[derive(Debug)]
@@ -67,9 +64,9 @@ pub fn try_main(args: Args) -> Result<i32> {
 }
 
 fn install(amend_pathext: bool) -> Result<()> {
-    use self::winreg::enums as wre;
-    use self::winreg::RegKey;
     use std::env;
+    use winreg::enums as wre;
+    use winreg::RegKey;
 
     // Set up file association.
     let cs_path = env::current_exe()?;
@@ -139,8 +136,8 @@ fn install(amend_pathext: bool) -> Result<()> {
 }
 
 fn uninstall() -> Result<()> {
-    use self::winreg::enums as wre;
-    use self::winreg::RegKey;
+    use winreg::enums as wre;
+    use winreg::RegKey;
 
     let mut ignored_missing = false;
     {

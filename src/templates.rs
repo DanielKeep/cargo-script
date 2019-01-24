@@ -10,11 +10,10 @@ or distributed except according to those terms.
 /*!
 This module contains code related to template support.
 */
-use clap;
 use crate::consts;
 use crate::error::{Blame, MainError, Result, ResultExt};
-use open;
 use crate::platform;
+use lazy_static::lazy_static;
 use regex::Regex;
 use std::borrow::Cow;
 use std::collections::HashMap;

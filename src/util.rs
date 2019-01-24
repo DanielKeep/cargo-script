@@ -10,6 +10,7 @@ or distributed except according to those terms.
 /*!
 This module just contains other random implementation stuff.
 */
+use log::error;
 use std::error::Error;
 use std::marker::PhantomData;
 
@@ -81,7 +82,7 @@ pub use self::suppress_child_output::{suppress_child_output, ChildToken};
 #[cfg(feature = "suppress-cargo-output")]
 mod suppress_child_output {
     use crate::error::Result;
-    use crossbeam_channel;
+    use crossbeam_channel::select;
     use std::io;
     use std::process::{self, Command};
     use std::thread;

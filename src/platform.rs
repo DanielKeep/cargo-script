@@ -30,8 +30,6 @@ impl MigrationKind {
 
 #[cfg(any(unix, windows))]
 mod inner_unix_or_windows {
-    use time;
-
     /**
     Gets the current system time, in milliseconds since the UNIX epoch.
     */
@@ -60,6 +58,7 @@ mod inner {
 
     use crate::error::{Blame, MainError};
     use super::MigrationKind;
+    use log::info;
     use std::os::unix::ffi::OsStrExt;
     use std::os::unix::fs::MetadataExt;
     use std::path::{Path, PathBuf};
@@ -247,8 +246,6 @@ mod inner {
 pub mod inner {
     #![allow(non_snake_case)]
 
-    use winapi;
-
     pub use super::inner_unix_or_windows::current_time;
 
     use super::MigrationKind;
@@ -318,7 +315,7 @@ pub mod inner {
         dwFlags: winapi::shared::minwindef::DWORD,
         hToken: winapi::shared::ntdef::HANDLE,
     ) -> WinResult<OsString> {
-        use self::winapi::shared::ntdef::PWSTR;
+        use winapi::shared::ntdef::PWSTR;
         let mut psz_path: PWSTR = unsafe { mem::uninitialized() };
         let hresult = unsafe {
             winapi::um::shlobj::SHGetKnownFolderPath(
