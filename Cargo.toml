@@ -18,11 +18,11 @@ exclude = [
 
 [features]
 default = ["suppress-cargo-output"]
-suppress-cargo-output = ["chan"]
+suppress-cargo-output = ["crossbeam-channel"]
 
 [dependencies]
-chan = { version = "0.1.23", optional = true }
 clap = "2.33.0"
+crossbeam-channel = { version = "0.3.6", optional = true }
 env_logger = "0.5.12"
 hoedown = "6.0.0"
 itertools = "0.8.0"
