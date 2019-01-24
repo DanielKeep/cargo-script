@@ -40,7 +40,10 @@ Records who we have chosen to blame for a particular error.
 This is used to distinguish between "report this to a user" and "explode violently".
 */
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Blame { Human, Internal }
+pub enum Blame {
+    Human,
+    Internal,
+}
 
 impl MainError {
     pub fn blame(&self) -> Blame {
@@ -50,7 +53,7 @@ impl MainError {
             | Tag(blame, _, _)
             | Other(blame, _)
             | OtherOwned(blame, _)
-            | OtherBorrowed(blame, _) => blame
+            | OtherBorrowed(blame, _) => blame,
         }
     }
 
@@ -65,8 +68,7 @@ impl MainError {
             | Tag(ref mut cur_blame, _, _)
             | Other(ref mut cur_blame, _)
             | OtherOwned(ref mut cur_blame, _)
-            | OtherBorrowed(ref mut cur_blame, _)
-            => *cur_blame = blame,
+            | OtherBorrowed(ref mut cur_blame, _) => *cur_blame = blame,
         }
     }
 }
@@ -105,7 +107,7 @@ macro_rules! from_impl {
                 $e
             }
         }
-    }
+    };
 }
 
 from_impl! { (Blame, io::Error) => MainError, v -> MainError::Io(v.0, v.1) }
@@ -115,7 +117,10 @@ from_impl! { io::Error => MainError, v -> MainError::Io(Blame::Internal, v) }
 from_impl! { String => MainError, v -> MainError::OtherOwned(Blame::Internal, v) }
 from_impl! { &'static str => MainError, v -> MainError::OtherBorrowed(Blame::Internal, v) }
 
-impl<T> From<Box<T>> for MainError where T: 'static + Error {
+impl<T> From<Box<T>> for MainError
+where
+    T: 'static + Error,
+{
     fn from(src: Box<T>) -> Self {
         MainError::Other(Blame::Internal, src)
     }
@@ -124,7 +129,8 @@ impl<T> From<Box<T>> for MainError where T: 'static + Error {
 pub trait ResultExt {
     type Ok;
     fn err_tag<S>(self, msg: S) -> Result<Self::Ok>
-    where S: Into<Cow<'static, str>>;
+    where
+        S: Into<Cow<'static, str>>;
 
     fn shift_blame(self, blame: Blame) -> Self;
 }
@@ -133,7 +139,9 @@ impl<T> ResultExt for Result<T> {
     type Ok = T;
 
     fn err_tag<S>(self, msg: S) -> Result<Self::Ok>
-    where S: Into<Cow<'static, str>> {
+    where
+        S: Into<Cow<'static, str>>,
+    {
         match self {
             Ok(v) => Ok(v),
             Err(e) => Err(MainError::Tag(e.blame(), msg.into(), Box::new(e))),
@@ -146,7 +154,7 @@ impl<T> ResultExt for Result<T> {
             Err(mut e) => {
                 e.shift_blame(blame);
                 Err(e)
-            },
+            }
         }
     }
 }

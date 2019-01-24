@@ -10,16 +10,16 @@ or distributed except according to those terms.
 /*!
 This module contains code related to template support.
 */
+use clap;
+use consts;
+use error::{Blame, MainError, Result, ResultExt};
+use open;
+use platform;
+use regex::Regex;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use clap;
-use open;
-use regex::Regex;
-use consts;
-use error::{Blame, MainError, Result, ResultExt};
-use platform;
 
 lazy_static! {
     static ref RE_SUB: Regex = Regex::new(r#"#\{([A-Za-z_][A-Za-z0-9_]*)}"#).unwrap();
@@ -66,18 +66,14 @@ impl Args {
 
     pub fn parse(m: &clap::ArgMatches) -> Self {
         match m.subcommand() {
-            ("dump", Some(m)) => {
-                Args::Dump {
-                    name: m.value_of("template").unwrap().into(),
-                }
+            ("dump", Some(m)) => Args::Dump {
+                name: m.value_of("template").unwrap().into(),
             },
             ("list", _) => Args::List,
-            ("show", Some(m)) => {
-                Args::Show {
-                    path: m.is_present("show_path"),
-                }
+            ("show", Some(m)) => Args::Show {
+                path: m.is_present("show_path"),
             },
-            (name, _) => panic!("bad subcommand: {:?}", name)
+            (name, _) => panic!("bad subcommand: {:?}", name),
         }
     }
 }
@@ -94,10 +90,7 @@ pub fn try_main(args: Args) -> Result<i32> {
 
 pub fn expand(src: &str, subs: &HashMap<&str, &str>) -> Result<String> {
     // The estimate of final size is the sum of the size of all the input.
-    let sub_size = subs
-        .iter()
-        .map(|(_, v)| v.len())
-        .sum::<usize>();
+    let sub_size = subs.iter().map(|(_, v)| v.len()).sum::<usize>();
     let est_size = src.len() + sub_size;
 
     let mut anchor = 0;
@@ -117,7 +110,12 @@ pub fn expand(src: &str, subs: &HashMap<&str, &str>) -> Result<String> {
         let sub_name = m.get(1).unwrap().as_str();
         match subs.get(sub_name) {
             Some(s) => result.push_str(s),
-            None => return Err(MainError::OtherOwned(Blame::Human, format!("substitution `{}` in template is unknown", sub_name))),
+            None => {
+                return Err(MainError::OtherOwned(
+                    Blame::Human,
+                    format!("substitution `{}` in template is unknown", sub_name),
+                ));
+            }
         }
     }
     result.push_str(&src[anchor..]);
@@ -149,15 +147,17 @@ pub fn get_template(name: &str) -> Result<Cow<'static, str>> {
 
     let file = fs::File::open(base.join(format!("{}.rs", name)))
         .map_err(MainError::from)
-        .err_tag(format!("template file `{}.rs` does not exist in {}",
+        .err_tag(format!(
+            "template file `{}.rs` does not exist in {}",
             name,
-            base.display()))
+            base.display()
+        ))
         .shift_blame(Blame::Human);
 
     // If the template is one of the built-in ones, do fallback if it wasn't found on disk.
     if file.is_err() {
         if let Some(text) = builtin_template(name) {
-            return Ok(text.into())
+            return Ok(text.into());
         }
     }
 
@@ -190,11 +190,19 @@ fn list() -> Result<()> {
     let t_path = get_template_path()?;
 
     if !t_path.exists() {
-        return Err(format!("cannot list template directory `{}`: it does not exist", t_path.display()).into());
+        return Err(format!(
+            "cannot list template directory `{}`: it does not exist",
+            t_path.display()
+        )
+        .into());
     }
 
     if !t_path.is_dir() {
-        return Err(format!("cannot list template directory `{}`: it is not a directory", t_path.display()).into());
+        return Err(format!(
+            "cannot list template directory `{}`: it is not a directory",
+            t_path.display()
+        )
+        .into());
     }
 
     for entry in fs::read_dir(&t_path)? {
@@ -226,7 +234,11 @@ fn show(path: bool) -> Result<()> {
         if t_path.is_dir() {
             open::that(&t_path)?;
         } else {
-            return Err(format!("cannot open directory `{}`; it isn't a directory", t_path.display()).into());
+            return Err(format!(
+                "cannot open directory `{}`; it isn't a directory",
+                t_path.display()
+            )
+            .into());
         }
         Ok(())
     }

@@ -4,5 +4,6 @@ fn test_version() {
     assert!(out.success());
     scan!(&out.stdout;
         ("cargo-script", &::std::env::var("CARGO_PKG_VERSION").unwrap(), .._) => ()
-    ).unwrap();
+    )
+    .unwrap();
 }
