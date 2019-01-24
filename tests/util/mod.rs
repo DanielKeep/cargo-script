@@ -6,7 +6,7 @@ macro_rules! cargo_script {
         $($args:expr),* $(,)*
     ) => {
         {
-            extern crate tempdir;
+            use tempdir;
             use std::process::Command;
 
             let cargo_lock = crate::util::CARGO_MUTEX.lock().expect("could not acquire Cargo mutext");

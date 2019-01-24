@@ -30,7 +30,7 @@ impl MigrationKind {
 
 #[cfg(any(unix, windows))]
 mod inner_unix_or_windows {
-    extern crate time;
+    use time;
 
     /**
     Gets the current system time, in milliseconds since the UNIX epoch.
@@ -56,12 +56,10 @@ mod inner_unix_or_windows {
 
 #[cfg(unix)]
 mod inner {
-    extern crate atty;
-
     pub use super::inner_unix_or_windows::current_time;
 
+    use crate::error::{Blame, MainError};
     use super::MigrationKind;
-    use error::{Blame, MainError};
     use std::os::unix::ffi::OsStrExt;
     use std::os::unix::fs::MetadataExt;
     use std::path::{Path, PathBuf};
@@ -249,7 +247,7 @@ mod inner {
 pub mod inner {
     #![allow(non_snake_case)]
 
-    extern crate winapi;
+    use winapi;
 
     pub use super::inner_unix_or_windows::current_time;
 
@@ -310,7 +308,7 @@ pub mod inner {
     struct WinError(winapi::shared::winerror::HRESULT);
 
     impl fmt::Display for WinError {
-        fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
             write!(fmt, "HRESULT({})", self.0)
         }
     }

@@ -37,7 +37,7 @@ A `Defer` can also be "disarmed", preventing the closure from running at all.
 #[must_use]
 pub struct Defer<'a, F, E>(Option<F>, PhantomData<&'a F>)
 where
-    F: 'a + FnOnce() -> Result<(), E>,
+    F: FnOnce() -> Result<(), E>,
     E: Error;
 
 impl<'a, F, E> Defer<'a, F, E>

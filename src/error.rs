@@ -74,7 +74,7 @@ impl MainError {
 }
 
 impl fmt::Display for MainError {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
         use self::MainError::*;
         use std::fmt::Display;
         match *self {

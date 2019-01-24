@@ -13,8 +13,8 @@ This module deals with setting up file associations.
 Since this only makes sense on Windows, this entire module is Windows-only.
 */
 #![cfg(windows)]
-extern crate itertools;
-extern crate winreg;
+use itertools;
+use winreg;
 
 use self::itertools::Itertools;
 use clap;
@@ -46,7 +46,7 @@ impl Args {
             )
     }
 
-    pub fn parse(m: &clap::ArgMatches) -> Self {
+    pub fn parse(m: &clap::ArgMatches<'_>) -> Self {
         match m.subcommand() {
             ("install", Some(m)) => Args::Install {
                 amend_pathext: m.is_present("amend_pathext"),

@@ -64,7 +64,7 @@ impl Args {
             )
     }
 
-    pub fn parse(m: &clap::ArgMatches) -> Self {
+    pub fn parse(m: &clap::ArgMatches<'_>) -> Self {
         match m.subcommand() {
             ("dump", Some(m)) => Args::Dump {
                 name: m.value_of("template").unwrap().into(),

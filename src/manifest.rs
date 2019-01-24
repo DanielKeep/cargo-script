@@ -10,8 +10,8 @@ or distributed except according to those terms.
 /*!
 This module is concerned with how `cargo-script` extracts the manfiest from a script file.
 */
-extern crate hoedown;
-extern crate regex;
+use hoedown;
+use regex;
 
 use self::regex::Regex;
 use std::collections::HashMap;
@@ -48,7 +48,7 @@ Splits input into a complete Cargo manifest and unadultered Rust source.
 Unless we have prelude items to inject, in which case it will be *slightly* adulterated.
 */
 pub fn split_input(
-    input: &Input,
+    input: &Input<'_>,
     deps: &[(String, String)],
     prelude_items: &[String],
 ) -> Result<(String, String)> {
@@ -403,7 +403,7 @@ Locates a manifest embedded in Rust source.
 
 Returns `Some((manifest, source))` if it finds a manifest, `None` otherwise.
 */
-fn find_embedded_manifest(s: &str) -> Option<(Manifest, &str)> {
+fn find_embedded_manifest(s: &str) -> Option<(Manifest<'_>, &str)> {
     find_short_comment_manifest(s).or_else(|| find_code_block_manifest(s))
 }
 
@@ -615,7 +615,7 @@ fn main() {}
 /**
 Locates a "short comment manifest" in Rust source.
 */
-fn find_short_comment_manifest(s: &str) -> Option<(Manifest, &str)> {
+fn find_short_comment_manifest(s: &str) -> Option<(Manifest<'_>, &str)> {
     /*
     This is pretty simple: the only valid syntax for this is for the first, non-blank line to contain a single-line comment whose first token is `cargo-deps:`.  That's it.
     */
@@ -631,7 +631,7 @@ fn find_short_comment_manifest(s: &str) -> Option<(Manifest, &str)> {
 /**
 Locates a "code block manifest" in Rust source.
 */
-fn find_code_block_manifest(s: &str) -> Option<(Manifest, &str)> {
+fn find_code_block_manifest(s: &str) -> Option<(Manifest<'_>, &str)> {
     /*
     This has to happen in a few steps.
 
@@ -1043,7 +1043,7 @@ time = "*"
 /**
 Generates a default Cargo manifest for the given input.
 */
-fn default_manifest(input: &Input) -> Result<toml::value::Table> {
+fn default_manifest(input: &Input<'_>) -> Result<toml::value::Table> {
     let mani_str = {
         let pkg_name = input.package_name();
         let mut subs = HashMap::with_capacity(2);

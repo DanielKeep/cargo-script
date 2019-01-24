@@ -16,6 +16,8 @@ exclude = [
     ".travis.yml",
 ]
 
+edition = "2018"
+
 [features]
 default = ["suppress-cargo-output"]
 suppress-cargo-output = ["crossbeam-channel"]
