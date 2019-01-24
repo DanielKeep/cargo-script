@@ -9,7 +9,7 @@ macro_rules! cargo_script {
             extern crate tempdir;
             use std::process::Command;
 
-            let cargo_lock = ::util::CARGO_MUTEX.lock().expect("could not acquire Cargo mutext");
+            let cargo_lock = crate::util::CARGO_MUTEX.lock().expect("could not acquire Cargo mutext");
 
             let temp_dir = tempdir::TempDir::new("cargo-script-test").unwrap();
             let cmd_str;
@@ -29,7 +29,7 @@ macro_rules! cargo_script {
                 cmd_str = format!("{:?}", cmd);
 
                 cmd.output()
-                    .map(::util::Output::from)
+                    .map(crate::util::Output::from)
             };
 
             if let Ok(out) = out.as_ref() {
@@ -58,11 +58,11 @@ macro_rules! cargo_script {
 
 macro_rules! with_output_marker {
     (prelude $p:expr; $e:expr) => {
-        format!(concat!($p, "{}", $e), ::util::OUTPUT_MARKER_CODE)
+        format!(concat!($p, "{}", $e), crate::util::OUTPUT_MARKER_CODE)
     };
 
     ($e:expr) => {
-        format!(concat!("{}", $e), ::util::OUTPUT_MARKER_CODE)
+        format!(concat!("{}", $e), crate::util::OUTPUT_MARKER_CODE)
     };
 }
 

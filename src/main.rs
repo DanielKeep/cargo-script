@@ -89,9 +89,9 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
-use error::{Blame, MainError, Result, ResultExt};
-use platform::MigrationKind;
-use util::{ChainMap, Defer, PathExt};
+use crate::error::{Blame, MainError, Result, ResultExt};
+use crate::platform::MigrationKind;
+use crate::util::{ChainMap, Defer, PathExt};
 
 #[derive(Debug)]
 enum SubCommand {
@@ -338,12 +338,12 @@ fn parse_args() -> SubCommand {
         .get_matches();
 
     if let Some(m) = m.subcommand_matches("templates") {
-        return ::SubCommand::Templates(templates::Args::parse(m));
+        return crate::SubCommand::Templates(templates::Args::parse(m));
     }
 
     if_windows! {
         if let Some(m) = m.subcommand_matches("file-association") {
-            return ::SubCommand::FileAssoc(file_assoc::Args::parse(m));
+            return crate::SubCommand::FileAssoc(file_assoc::Args::parse(m));
         }
     }
 
@@ -372,7 +372,7 @@ fn parse_args() -> SubCommand {
         })
     }
 
-    ::SubCommand::Script(Args {
+    crate::SubCommand::Script(Args {
         script: m.value_of("script").map(Into::into),
         args: owned_vec_string(m.values_of("args")),
         features: m.value_of("features").map(Into::into),
@@ -1342,7 +1342,7 @@ impl<'a> Input<'a> {
     Return the path to the script, if it has one.
     */
     pub fn path(&self) -> Option<&Path> {
-        use Input::*;
+        use crate::Input::*;
 
         match *self {
             File(_, path, _, _) => Some(path),
@@ -1357,7 +1357,7 @@ impl<'a> Input<'a> {
     Currently, nothing is done to ensure this, other than hoping *really hard* that we don't get fed some excessively bizzare input filename.
     */
     pub fn safe_name(&self) -> &str {
-        use Input::*;
+        use crate::Input::*;
 
         match *self {
             File(name, _, _, _) => name,
@@ -1415,7 +1415,7 @@ impl<'a> Input<'a> {
     {
         use shaman::digest::Digest;
         use shaman::sha1::Sha1;
-        use Input::*;
+        use crate::Input::*;
 
         let hash_deps = || {
             let mut hasher = Sha1::new();

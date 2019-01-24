@@ -254,7 +254,7 @@ pub mod inner {
     pub use super::inner_unix_or_windows::current_time;
 
     use super::MigrationKind;
-    use error::MainError;
+    use crate::error::MainError;
     use std::ffi::OsString;
     use std::fmt;
     use std::fs;

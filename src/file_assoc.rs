@@ -18,7 +18,7 @@ extern crate winreg;
 
 use self::itertools::Itertools;
 use clap;
-use error::{Blame, Result};
+use crate::error::{Blame, Result};
 use std::io;
 
 #[derive(Debug)]
