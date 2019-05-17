@@ -1103,7 +1103,7 @@ fn merge_manifest(
     for (k, v) in from_t {
         match v {
             toml::Value::Table(from_t) => {
-                use std::collections::btree_map::Entry::*;
+                use toml::map::Entry::*;
 
                 // Merge.
                 match into_t.entry(k) {
