@@ -34,6 +34,7 @@ mod inner_unix_or_windows {
     Gets the current system time, in milliseconds since the UNIX epoch.
     */
     pub fn current_time() -> u64 {
+        use std::convert::TryInto;
         /*
         This is kinda dicey, since *ideally* both this function and `file_last_modified` would be using the same underlying APIs.  They are not, insofar as I know.
 
@@ -41,14 +42,12 @@ mod inner_unix_or_windows {
 
         That said, so long as everything is in the same units and uses the same epoch, it should be fine.
         */
-        let now_1970_utc = time::now_utc().to_timespec();
-        if now_1970_utc.sec < 0 || now_1970_utc.nsec < 0 {
-            // Fuck it.
-            return 0;
-        }
-        let now_ms_1970_utc =
-            (now_1970_utc.sec as u64 * 1000) + (now_1970_utc.nsec as u64 / 1_000_000);
-        now_ms_1970_utc
+        (
+            time::OffsetDateTime::now() - time::OffsetDateTime::unix_epoch()
+        )
+        .whole_milliseconds()
+        .try_into()
+        .expect("expected timestamp within u64 millisecond range of Unix epoch")
     }
 }
 
