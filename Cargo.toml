@@ -52,7 +52,7 @@ winapi = { version = "0.3.7", features = [
 winreg = "0.6.0"
 
 [target.'cfg(unix)'.dependencies]
-atty = "0.2.11"
+atty = "0.2.14"
 
 [dev-dependencies]
 gcc = "0.3.55"
