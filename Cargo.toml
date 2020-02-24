@@ -36,7 +36,7 @@ semver = "0.9.0"
 serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 shaman = "0.1.0"
-time = { version = "0.2.6", features = ["std"] }
+time = { version = "0.2.7", features = ["std"] }
 toml = "0.5.6"
 
 [target.'cfg(windows)'.dependencies]
