@@ -49,7 +49,7 @@ winapi = { version = "0.3.7", features = [
     "shtypes",
     "winerror"
 ] }
-winreg = "0.6.0"
+winreg = "0.7.0"
 
 [target.'cfg(unix)'.dependencies]
 atty = "0.2.14"
