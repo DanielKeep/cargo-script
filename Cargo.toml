@@ -23,7 +23,7 @@ default = ["suppress-cargo-output"]
 suppress-cargo-output = ["crossbeam-channel"]
 
 [dependencies]
-clap = "2.33.0"
+clap = "2.33.1"
 crossbeam-channel = { version = "0.4.2", optional = true }
 env_logger = "0.7.1"
 hoedown = "6.0.0"
