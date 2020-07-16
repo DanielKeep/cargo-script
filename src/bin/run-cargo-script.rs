@@ -38,9 +38,7 @@ fn main() {
 
     let mut cmd = Command::new("cargo");
 
-    cmd.arg("script")
-        .arg(path)
-        .arg("--");
+    cmd.arg("script").arg(path).arg("--");
 
     for arg in args {
         cmd.arg(arg);
@@ -51,7 +49,7 @@ fn main() {
         Err(_) => None,
     } {
         Some(c) => c,
-        None => !0
+        None => !0,
     };
     std::process::exit(exit_status);
 }

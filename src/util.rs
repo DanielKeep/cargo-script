@@ -10,6 +10,7 @@ or distributed except according to those terms.
 /*!
 This module just contains other random implementation stuff.
 */
+use log::error;
 use std::error::Error;
 use std::marker::PhantomData;
 
@@ -18,7 +19,9 @@ A really, really hacky way of avoiding a variable binding.
 */
 pub trait ChainMap: Sized {
     fn chain_map<F>(self, f: F) -> Self
-    where F: FnOnce(Self) -> Self {
+    where
+        F: FnOnce(Self) -> Self,
+    {
         f(self)
     }
 }
@@ -34,12 +37,14 @@ A `Defer` can also be "disarmed", preventing the closure from running at all.
 */
 #[must_use]
 pub struct Defer<'a, F, E>(Option<F>, PhantomData<&'a F>)
-where F: 'a + FnOnce() -> Result<(), E>,
+where
+    F: FnOnce() -> Result<(), E>,
     E: Error;
 
 impl<'a, F, E> Defer<'a, F, E>
-where F: 'a + FnOnce() -> Result<(), E>,
-    E: Error
+where
+    F: 'a + FnOnce() -> Result<(), E>,
+    E: Error,
 {
     /**
     Create a new `Defer` with the given closure.
@@ -60,7 +65,7 @@ where F: 'a + FnOnce() -> Result<(), E>,
 impl<'a, F, E> ::std::ops::Drop for Defer<'a, F, E>
 where
     F: 'a + FnOnce() -> Result<(), E>,
-    E: Error
+    E: Error,
 {
     fn drop(&mut self) {
         if let Some(f) = self.0.take() {
@@ -71,17 +76,17 @@ where
     }
 }
 
-#[cfg(feature="suppress-cargo-output")]
-pub use self::suppress_child_output::{ChildToken, suppress_child_output};
+#[cfg(feature = "suppress-cargo-output")]
+pub use self::suppress_child_output::{suppress_child_output, ChildToken};
 
-#[cfg(feature="suppress-cargo-output")]
+#[cfg(feature = "suppress-cargo-output")]
 mod suppress_child_output {
+    use crate::error::Result;
+    use crossbeam_channel::select;
     use std::io;
     use std::process::{self, Command};
     use std::thread;
     use std::time::Duration;
-    use chan;
-    use error::Result;
 
     /**
     Suppresses the stderr output of a child process, unless:
@@ -96,31 +101,30 @@ mod suppress_child_output {
     pub fn suppress_child_output(cmd: &mut Command, timeout: Duration) -> Result<ChildToken> {
         cmd.stderr(process::Stdio::piped());
 
-        let mut child = try!(cmd.spawn());
+        let mut child = cmd.spawn()?;
         let stderr = child.stderr.take().expect("no stderr pipe found");
 
-        let timeout_chan = chan::after(timeout);
-        let (done_sig, done_gate) = chan::sync(0);
+        let timeout_chan = crossbeam_channel::after(timeout);
+        let (done_sig, done_gate) = crossbeam_channel::bounded(0);
 
         let _ = thread::spawn(move || {
             let show_stderr;
             let mut recv_done = false;
-            chan_select! {
-                timeout_chan.recv() => {
+            select! {
+                recv(timeout_chan) -> _ => {
                     show_stderr = true;
                 },
-                done_gate.recv() -> success => {
+                recv(done_gate) -> success => {
                     show_stderr = !success.unwrap_or(true);
                     recv_done = true;
                 },
             }
             if show_stderr {
                 let mut stderr = stderr;
-                io::copy(&mut stderr, &mut io::stderr())
-                    .expect("could not copy child stderr");
+                io::copy(&mut stderr, &mut io::stderr()).expect("could not copy child stderr");
             }
             if !recv_done {
-                done_gate.recv();
+                done_gate.recv().unwrap();
             }
         });
 
@@ -133,7 +137,7 @@ mod suppress_child_output {
 
     pub struct ChildToken {
         child: process::Child,
-        done_sig: Option<chan::Sender<bool>>,
+        done_sig: Option<crossbeam_channel::Sender<bool>>,
         // stderr_join: Option<thread::JoinHandle<()>>,
     }
 
@@ -143,13 +147,13 @@ mod suppress_child_output {
                 Ok(r) => r,
                 Err(e) => {
                     if let Some(done_sig) = self.done_sig.take() {
-                        done_sig.send(false);
+                        done_sig.send(false).unwrap();
                     }
                     return Err(e.into());
                 }
             };
             if let Some(done_sig) = self.done_sig.take() {
-                done_sig.send(st.success());
+                done_sig.send(st.success()).unwrap();
             }
             // if let Some(stderr_join) = self.stderr_join.take() {
             //     stderr_join.join()

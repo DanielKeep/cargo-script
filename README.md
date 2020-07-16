@@ -111,6 +111,9 @@ The output of Cargo will be hidden unless compilation fails, or takes longer tha
     //! `cargo` "language".
     //!
     //! ```cargo
+    //! [package]
+    //! edition = "2018"
+    //!
     //! [dependencies]
     //! time = "0.1.25"
     //! ```

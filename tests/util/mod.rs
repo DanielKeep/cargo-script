@@ -6,10 +6,9 @@ macro_rules! cargo_script {
         $($args:expr),* $(,)*
     ) => {
         {
-            extern crate tempdir;
             use std::process::Command;
 
-            let cargo_lock = ::util::CARGO_MUTEX.lock().expect("could not acquire Cargo mutext");
+            let cargo_lock = crate::util::CARGO_MUTEX.lock().expect("could not acquire Cargo mutext");
 
             let temp_dir = tempdir::TempDir::new("cargo-script-test").unwrap();
             let cmd_str;
@@ -29,7 +28,7 @@ macro_rules! cargo_script {
                 cmd_str = format!("{:?}", cmd);
 
                 cmd.output()
-                    .map(::util::Output::from)
+                    .map(crate::util::Output::from)
             };
 
             if let Ok(out) = out.as_ref() {
@@ -58,11 +57,11 @@ macro_rules! cargo_script {
 
 macro_rules! with_output_marker {
     (prelude $p:expr; $e:expr) => {
-        format!(concat!($p, "{}", $e), ::util::OUTPUT_MARKER_CODE)
+        format!(concat!($p, "{}", $e), crate::util::OUTPUT_MARKER_CODE)
     };
 
     ($e:expr) => {
-        format!(concat!("{}", $e), ::util::OUTPUT_MARKER_CODE)
+        format!(concat!("{}", $e), crate::util::OUTPUT_MARKER_CODE)
     };
 }
 
@@ -84,15 +83,16 @@ impl Output {
     pub fn stdout_output(&self) -> &str {
         assert!(self.success());
         for marker in self.stdout.matches(OUTPUT_MARKER) {
-            let i = subslice_offset(&self.stdout, marker)
-                .expect("couldn't find marker in output");
-            let before_cp = self.stdout[..i].chars().rev().next()
-                .unwrap_or('\n');
-            if !(before_cp == '\r' || before_cp == '\n') { continue; }
-            let after = &self.stdout[i+OUTPUT_MARKER.len()..];
-            let after_cp = after.chars().next()
-                .expect("couldn't find cp after marker");
-            if !(after_cp == '\r' || after_cp == '\n') { continue; }
+            let i = subslice_offset(&self.stdout, marker).expect("couldn't find marker in output");
+            let before_cp = self.stdout[..i].chars().rev().next().unwrap_or('\n');
+            if !(before_cp == '\r' || before_cp == '\n') {
+                continue;
+            }
+            let after = &self.stdout[i + OUTPUT_MARKER.len()..];
+            let after_cp = after.chars().next().expect("couldn't find cp after marker");
+            if !(after_cp == '\r' || after_cp == '\n') {
+                continue;
+            }
             return after;
         }
         panic!("could not find `{}` in script output", OUTPUT_MARKER);
