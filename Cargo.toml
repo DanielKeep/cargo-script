@@ -52,7 +52,7 @@ scan-rules = "0.2.0"
 tempdir = "0.3.5"
 
 [build-dependencies]
-rustc_version = "0.1.7" # version 0.2 incompatible with Rust < 1.14
+rustc_version = "0.3.3" # version 0.2 incompatible with Rust < 1.14
 
 [profile.release]
 lto = true
